@@ -1,0 +1,759 @@
+Simpledatabinding.aspx.cs:
+using System;
+using System.Data;
+namespace Practical6
+{
+ public partial class simpledatabinding : System.Web.UI.Page
+ {
+ protected void Page_Load(object sender, EventArgs e)
+ {
+ if (!IsPostBack)
+ {
+ DataSet ds = CreateDataSet();
+ GridView1.DataSource = ds.Tables["Students"];
+ GridView1.DataBind();
+ }
+ }
+ private DataSet CreateDataSet()
+ {
+ //creating a DataSet object for tables
+ DataSet dataset = new DataSet();
+ //creating the student table
+ DataTable Students = CreateStudentTable();
+ dataset.Tables.Add(Students);
+ return dataset;
+ }
+ private DataTable CreateStudentTable()
+ {
+ DataTable Students = new DataTable("Students");
+ //adding columns
+ AddNewColumn(Students, "System.Int32", "StudentID");
+ AddNewColumn(Students, "System.String", "StudentName");
+ AddNewColumn(Students, "System.String", "StudentCity");
+ //adding rows
+ AddNewRow(Students, 1, "Salman", "Kolkata");
+ AddNewRow(Students, 2, "Shraukh", "Delhi");
+ AddNewRow(Students, 3, "Deepika", "Hyderabad");
+ AddNewRow(Students, 4, "maddhubala", "Bikaner");
+ AddNewRow(Students, 5, "Priyanka", "Patna");
+ return Students;
+ }
+ private void AddNewColumn(DataTable table, string columnType, string
+columnName)
+ {
+ DataColumn column = table.Columns.Add(columnName, 
+Type.GetType(columnType));
+ }
+ //adding data into the table
+ private void AddNewRow(DataTable table, int id,string name, string city)
+ {
+ DataRow newrow = table.NewRow();
+ newrow["StudentID"] = id;
+ newrow["StudentName"] = name;
+ newrow["StudentCity"] = city;
+ table.Rows.Add(newrow);
+ }
+ }
+}
+
+SQL Databinding
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data;
+using System.Data.SqlClient;
+namespace Practical6
+{
+ public partial class sqldatabinding : System.Web.UI.Page
+ {
+ protected void Page_Load(object sender, EventArgs e)
+ {
+ using (SqlConnection con=new SqlConnection("data source=.; 
+database=employee; integrated security=SSPI"))
+ {
+ SqlDataAdapter sde = new SqlDataAdapter("Select * from 
+employeedetail", con);
+ DataSet ds = new DataSet();
+ sde.Fill(ds);
+ DetailsView1.DataSource = ds;
+ DetailsView1.DataBind();
+ GridView1.DataSource = ds;
+ GridView1.DataBind();
+ }
+ }
+ 
+ }
+}
+
+XML WRITER 
+using System;
+using System.Xml;
+using System.Text;
+namespace PracticalNo7
+{
+ public partial class XMLReadWrite : System.Web.UI.Page
+ {
+ protected void Page_Load(object sender, EventArgs e)
+ {
+ }
+ protected void btnRead_Click(object sender, EventArgs e)
+ {
+ ReadXmlFile(Server.MapPath("EmployeeDetails.xml"));
+ }
+ protected void btnWrite_Click(object sender, EventArgs e)
+ {
+ XmlTextWriter xWriter = new
+XmlTextWriter(Server.MapPath("EmployeeDetails.xml"), Encoding.UTF8);
+ xWriter.WriteStartDocument();
+ xWriter.WriteStartElement("EmployeeDetails");
+ xWriter.WriteStartElement("Details");
+ xWriter.WriteElementString("Name", txtName.Text);
+ xWriter.WriteElementString("Department", txtDept.Text);
+ xWriter.WriteElementString("Location", txtLocation.Text);
+ xWriter.WriteEndElement();
+ xWriter.WriteEndElement();
+ xWriter.WriteEndDocument();
+ xWriter.Close();
+ }
+ protected void ReadXmlFile(string fileName)
+ {
+ string parentElementName = "";
+ string childElementName = "";
+ string childElementValue = "";
+ bool element = false;
+ lblMsg.Text = "";
+ XmlTextReader xReader = new XmlTextReader(fileName);
+ while (xReader.Read())
+ {
+ if (xReader.NodeType == XmlNodeType.Element)
+ {
+ if (element)
+{
+ parentElementName = parentElementName + childElementName + 
+"<br>";
+ }
+element = true;
+ childElementName = xReader.Name;
+ }
+ else if (xReader.NodeType == XmlNodeType.Text | xReader.NodeType == 
+XmlNodeType.CDATA)
+ {
+ element = false;
+ childElementValue = xReader.Value;
+ lblMsg.Text = lblMsg.Text + "<b>" + parentElementName + "<br>" + 
+childElementName + "</b><br>" + childElementValue;
+ parentElementName = "";
+childElementName = "";
+ }
+ }
+ xReader.Close();
+ }
+ }
+}
+
+
+
+LINQDemo.aspx.cs:
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+namespace PracticalNo9
+{
+ public partial class LINQDemo : System.Web.UI.Page
+ {
+ protected void Page_Load(object sender, EventArgs e)
+ {
+ List<Books> books = Books.GetBooks();
+ IEnumerable<SalesDetails> sales = SalesDetails.getsalesdetails();
+ //Select query in LINQ
+ var booktitles = from b in books select b.Title;
+ foreach (var title in booktitles)
+ lblbooks.Text += String.Format("{0} <br/>", title);
+ //Join query in LINQ
+ var booktitlesjoin = from b in books
+ join s in sales on b.ID equals s.ID
+ select new { Name = b.Title, Pages = s.pages };
+ foreach (var title in booktitlesjoin)
+ lbljoin.Text += String.Format("{0} <br/>", title);
+ //Where clause in LINQ
+ var booktitleswhere = from b in books
+ join s in sales on b.ID equals s.ID
+ where s.pages > 500
+select new { Name = b.Title, Pages = s.pages };
+ foreach (var title in booktitleswhere)
+ lblwhere.Text += String.Format("{0} <br/>", title);
+ //Orderby in LINQ
+ var booktitlesorder = from b in books
+ join s in sales on b.ID equals s.ID
+ orderby b.Price
+select new { Name = b.Title, Pages = s.pages, 
+Price=b.Price };
+ foreach (var title in booktitlesorder)
+ lblorder.Text += String.Format("{0} <br/>", title);
+ //Let clause in LINQ
+ var booktitleslet = from b in books
+ join s in sales on b.ID equals s.ID
+ let totalprofit=(b.Price*s.sales)
+select new { Name = b.Title, TotalSale=totalprofit };
+ foreach (var title in booktitleslet)
+ lbllet.Text += String.Format("{0} <br/>", title);
+ }
+ }
+}
+SalesDetails.cs:
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+namespace PracticalNo9
+{
+ public class SalesDetails
+ {
+ public int sales { get; set; }
+ public int pages { get; set; }
+ public string ID { get; set; }
+ public static IEnumerable<SalesDetails> getsalesdetails()
+ {
+ SalesDetails[] sd =
+ {
+ new SalesDetails{ID="001", pages=678, sales=110000},
+ new SalesDetails{ID="002", pages=789, sales=60000},
+ new SalesDetails{ID="003", pages=456, sales=40000},
+ new SalesDetails{ID="004", pages=900, sales=80000},
+ new SalesDetails{ID="005", pages=456, sales=90000},
+ new SalesDetails{ID="006", pages=870, sales=50000},
+ new SalesDetails{ID="007", pages=675, sales=40000},
+ };
+ return sd.OfType<SalesDetails>();
+ }
+ }
+}
+Books.cs:
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+namespace PracticalNo9
+{
+ public class Books
+ {
+ public string ID { get; set; }
+ public string Title { get; set; }
+ public decimal Price { get; set; }
+ public DateTime DateOfRelease { get; set; }
+ public static List<Books> GetBooks()
+ {
+ List<Books> list = new List<Books>();
+ list.Add(new Books
+ {
+ ID = "001",
+ Title = "Programming in C#",
+ Price = 634.76m,
+ DateOfRelease = Convert.ToDateTime("2010-02-05")
+ });
+ list.Add(new Books
+ {
+ ID = "002",
+ Title = "Learn Java in 30 days",
+ Price = 250.76m,
+ DateOfRelease = Convert.ToDateTime("2011-08-15")
+ });
+ list.Add(new Books
+ {
+ ID = "003",
+ Title = "Programming in ASP.NET 4.0",
+ Price = 700.00m,
+ DateOfRelease = Convert.ToDateTime("2011-02-05")
+ });
+ list.Add(new Books
+ {
+ ID = "004",
+ Title = "VB.NET Made Easy",
+ Price = 500.99m,
+ DateOfRelease = Convert.ToDateTime("2011-12-31")
+ });
+ list.Add(new Books
+ {
+ ID = "005",
+ Title = "Programming in C",
+ Price = 314.76m,
+ DateOfRelease = Convert.ToDateTime("2010-02-05")
+ });
+ list.Add(new Books
+ {
+ ID = "006",
+ Title = "Programming in C++",
+ Price = 456.76m,
+ DateOfRelease = Convert.ToDateTime("2010-02-05")
+ });
+ list.Add(new Books
+ {
+ ID = "007",
+ Title = "Database Development",
+ Price = 634.76m,
+ DateOfRelease = Convert.ToDateTime("2010-02-05")
+ });
+ return list;
+ }
+ }
+}
+
+LINQWithSQL.aspx:
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="LINQWithSQL.aspx.cs"
+Inherits="PracticalNo9.LINQWithSQL" %>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+ <title></title>
+</head>
+<body>
+ <form id="form1" runat="server">
+ <div>
+ Select Query in employeedetail Tables
+ <br /><br />
+ <asp:GridView ID="GridView1" runat="server">
+ </asp:GridView>
+ <br />
+ Join Query
+ <br /><br />
+ <asp:GridView ID="GridView2" runat="server">
+ </asp:GridView>
+ <br /><br />
+ Where Query
+ <br /><br />
+ <asp:GridView ID="GridView3" runat="server">
+ </asp:GridView>
+ </div>
+ </form>
+</body>
+</html>
+LINQWithSQL.aspx.cs:
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+namespace PracticalNo9
+{
+ public partial class LINQWithSQL : System.Web.UI.Page
+ {
+ protected void Page_Load(object sender, EventArgs e)
+ {
+ DataClasses1DataContext dbContext = new DataClasses1DataContext();
+ var employee = dbContext.employeedetails;
+ var dept = dbContext.departmentdetails;
+ GridView1.DataSource = employee;
+ GridView1.DataBind();
+ //Joining table
+ var jointable=from emp in employee join d in dept on emp.dept_id equals
+d.dept_id
+ select new { Name=emp.firstname,Department=d.deptname};
+ GridView2.DataSource = jointable;
+ GridView2.DataBind();
+ //where clause (show list for firstname and deptname where salary more 
+than 45000)
+ var joinsal = from emp in employee
+ join d in dept on emp.dept_id equals d.dept_id
+ where emp.salary > 45000
+select new { Firstname = emp.firstname, DepartmentName = 
+d.deptname };
+ GridView3.DataSource = joinsal;
+ GridView3.DataBind();
+ }
+ }
+}
+
+Default.aspx.cs:
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Data.SqlClient;
+using System.Web.UI.WebControls;
+namespace PracticalNo10
+{
+ public partial class _Default : Page
+ {
+ protected void Page_Load(object sender, EventArgs e)
+ {
+ if (!IsPostBack)
+ {
+ this.DDLAjax.Items.Add("EmployeeDetail");
+ this.DDLAjax.Items.Add("DepartmentDetail");
+ }
+ }
+ protected void Button1_Click(object sender, EventArgs e)
+ {
+ SqlConnection con = new SqlConnection();
+ con.ConnectionString = "Data Source=.; Initial catalog=employee; 
+Integrated Security=True";
+ con.Open();
+ SqlCommand cmd = null;
+ if (this.DDLAjax.SelectedItem.Text == "EmployeeDetail")
+ {
+ cmd = new SqlCommand("Select * from employeedetail", con);
+ }
+ if (this.DDLAjax.SelectedItem.Text == "DepartmentDetail")
+ {
+ cmd = new SqlCommand("Select * from departmentdetail", con);
+ }
+ this.GridView1.DataSource = cmd.ExecuteReader();
+ this.GridView1.DataBind();
+ }
+ }
+}
+
+
+Cookies.aspx.cs
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+namespace PracticalNo._4
+{
+ public partial class Cookies : System.Web.UI.Page
+ {
+ protected void Page_Load(object sender, EventArgs e)
+ {
+ Response.Cookies["computer"].Expires = DateTime.Now.AddDays(-1);
+ }
+ 
+ protected void Button1_Click(object sender, EventArgs e)
+ {
+ Label2.Text = "";
+ //-------Adding Cookies-------//
+ if (apple.Checked)
+ Response.Cookies["computer"]["apple"] = "Apple";
+ if (dell.Checked)
+ Response.Cookies["computer"]["dell"] = "Dell";
+ if (lenovo.Checked)
+ Response.Cookies["computer"]["lenovo"] = "Lenovo";
+ if (acer.Checked)
+ Response.Cookies["computer"]["acer"] = "Acer";
+ if (sony.Checked)
+ Response.Cookies["computer"]["sony"] = "Sony";
+ if (wipro.Checked)
+ Response.Cookies["computer"]["wipro"] = "Wipro";
+ //--------Fetching Cookies----------//
+ if (Request.Cookies["computer"].Values.ToString() != null)
+ {
+ if (Request.Cookies["computer"]["apple"] != null)
+ Label2.Text += Request.Cookies["computer"]["apple"] + " ";
+ if (Request.Cookies["computer"]["dell"] != null)
+ Label2.Text += Request.Cookies["computer"]["dell"] + " ";
+ if (Request.Cookies["computer"]["lenovo"] != null)
+ Label2.Text += Request.Cookies["computer"]["lenovo"] + " ";
+ if (Request.Cookies["computer"]["acer"] != null)
+ Label2.Text += Request.Cookies["computer"]["acer"] + " ";
+ if (Request.Cookies["computer"]["sony"] != null)
+ Label2.Text += Request.Cookies["computer"]["sony"] + " ";
+ if (Request.Cookies["computer"]["wipro"] != null)
+ Label2.Text += Request.Cookies["computer"]["wipro"] + " ";
+ }
+ else Label2.Text = "Please select your choice";
+ Response.Cookies["computer"].Expires = DateTime.Now.AddDays(-1);
+ }
+ }
+ }
+ 
+ 
+ using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+namespace PracticalNo._4
+{
+ public partial class Session : System.Web.UI.Page
+ {
+ protected void Page_Load(object sender, EventArgs e)
+ {
+ }
+ protected void login_Click(object sender, EventArgs e)
+ {
+ if (TextBox2.Text == "qwe123")
+ {
+ Session["username"] = TextBox1.Text;
+ }
+ else
+ {
+ Displayerror.Text = "Wrong Password";
+ }
+ if (Session["username"] != null)
+ {
+ Displayerror.Text = "This username is stored to the session.";
+ sessioname.Text = Session["username"].ToString();
+ }
+ 
+ }
+ }
+}
+
+
+APPLICATION STATE
+Global.asax.cs
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Optimization;
+using System.Web.Routing;
+using System.Web.Security;
+using System.Web.SessionState;
+namespace PracticalNo._4
+{
+ public class Global : HttpApplication
+ {
+ /*void Application_Start(object sender, EventArgs e)
+ {
+ // Code that runs on application startup
+ RouteConfig.RegisterRoutes(RouteTable.Routes);
+ BundleConfig.RegisterBundles(BundleTable.Bundles);
+ }*/
+ void Application_Start(object sender, EventArgs e)
+ {
+ Application.Lock();
+ Application["tusers"] = 0;
+ Application["ousers"] = 0;
+ Application.UnLock();
+ }
+ void Application_End(object sender, EventArgs e)
+ {
+ //code that runs on application shutdown
+ }
+ void Appplication_Error(object sender, EventArgs e)
+ {
+ //code that runs when an unhandled error occurs
+ }
+ void Session_Start(object sender, EventArgs e)
+ {
+ int tusers, ousers;
+ Application.Lock();
+ tusers = int.Parse(Application["tusers"].ToString()) + 1;
+ ousers = int.Parse(Application["ousers"].ToString()) + 1;
+ Application["tusers"] = tusers;
+ Application["ousers"] = ousers;
+ Application.UnLock();
+ }
+ void Session_End(object sender, EventArgs e)
+ {
+ int ousers;
+ Application.Lock();
+ ousers = int.Parse(Application["ousers"].ToString()) - 1;
+ Application["ousers"] = ousers;
+ Application.UnLock();
+ }
+ }
+ 
+}
+Application.aspx.cs
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+namespace PracticalNo._4
+{
+ public partial class Application : System.Web.UI.Page
+ {
+ protected void Page_Load(object sender, EventArgs e)
+ {
+ string tusers, ousers;
+ Application.Lock();
+ tusers = Application["tusers"].ToString();
+ ousers = Application["ousers"].ToString();
+ Application.UnLock();
+ TextBox1.Text = tusers;
+ TextBox2.Text = ousers;
+ }
+ protected void Button1_Click(object sender, EventArgs e)
+ {
+ Session.Abandon();
+ }
+ 
+ }
+}
+
+
+
+using System;
+namespace PracticalNo1
+{
+ class Program
+ {
+ public void conditionllogic()
+ {
+ Console.WriteLine("Enter a grade value: ");
+ char grade = Convert.ToChar(Console.ReadLine());
+ switch (grade)
+ {
+ case 'A':
+ Console.WriteLine("Excellent!");
+break;
+ case 'B':
+ Console.WriteLine("Well Done");
+break;
+ case 'C':
+ Console.WriteLine("You have passed");
+break;
+ case 'F':
+ Console.WriteLine("Better try next time");
+break;
+ default:
+ Console.WriteLine("Invalid grade");
+break;
+ }
+ Console.WriteLine("Your Grade is: {0}", grade);
+ Console.ReadLine();
+ }
+ static void Main(string[] args)
+ {
+ Program p = new Program();
+ p.conditionllogic();
+ Class1 cl = new Class1();
+ cl.PrimeNumber();
+ }
+ }
+}
+using System;
+namespace PracticalNo1
+{
+ class Class1
+ {
+ public void PrimeNumber()
+ {
+ int num, f, i;
+ Console.WriteLine("Enter any number");
+ num = Convert.ToInt32(Console.ReadLine());
+ f = 0;
+ i = 2;
+ while (i <= num / 2)
+ {
+ if(num % i == 0)
+ {
+ f = 1;
+break;
+ }
+ i++;
+ }
+ if (f == 0)
+ {
+ Console.WriteLine(num + " is a Prime Number");
+ Console.ReadLine();
+ }
+ else
+ Console.WriteLine(num + " is not a Prime Number");
+ Console.ReadLine();
+ }
+ 
+ 
+ }
+}
+
+
+
+
+B) Aim: Write a C# program to demonstrate Object Manipulation, Loops and Method
+Create a Method “PrimeNumber” take a number from the user and write a while loop to check 
+whether it is a prime number or not call that method in the main by creating its class object
+Code
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+namespace PrimeNumber
+{
+ class Program
+ {
+ public void Primeno(int num)
+ {
+ int i;
+ Boolean prime = false;
+ for (i = 2; i <= num - 1; i++)
+ {
+ if (num % i == 0)
+ {
+ prime= true;
+ }
+ }
+ if(prime==true)
+ {
+ Console.WriteLine(num + " is not a Prime Number");
+ }
+ else
+ {
+ Console.WriteLine(num + " is a Prime Number");
+ }
+ }
+ static void Main(string[] args)
+ {
+ Console.Write("Enter a Number : ");
+ int n = Convert.ToInt32(Console.ReadLine());
+ Program p = new Program();
+ p.Primeno(n);
+ Console.ReadLine();
+ }
+ }
+}
+
+
+Write C# programs for Object oriented concepts of C# such as:
+a. Program using classes
+b. Constructor and Function Overloading
+c. Inheritance
+d. Namespaces
+CODE:
+using System;
+namespace PracticalNo2
+{
+ class Practical2
+ {
+ public void Area(double num)
+ {
+ double result = 3.14 * num * num;
+ Console.WriteLine("Area of circle= {0}", result);
+ Console.ReadLine();
+ }
+ public void Area(int num)
+ {
+ int result = num * num;
+ Console.WriteLine("Area of square= {0}", result);
+ Console.ReadLine();
+ }
+ public void Area(int p, int q)
+ {
+ int result = p * q;
+ Console.WriteLine("Area of rectangle= {0}", result);
+ Console.ReadLine();
+ }
+ }
+ class Pract2 : Practical2
+ {
+ public Pract2()
+ {
+ Console.WriteLine("Finding Area of Circle, Square and Rectangle");
+ Console.WriteLine("");
+ }
+ static void Main(string[] args)
+ {
+ Pract2 p2 = new Pract2();
+ p2.Area(6.7);
+ p2.Area(9);
+ p2.Area(12, 34);
+ }
+ }
+}
+
